@@ -1,9 +1,22 @@
 import scrapy
 from imdb_scraper.items import ImdbScraperItem
+from datetime import datetime, timedelta
 
 class ImdbMalayalamSpider(scrapy.Spider):
     name = 'imdb_spider'
-    start_urls = ['https://m.imdb.com/search/title/?primary_language=ml']
+
+    def start_requests(self):
+        # Define the start date and end date
+        start_date = datetime(2020, 1, 1)
+        end_date = datetime(2024, 12, 31)
+
+        # Generate URLs for each 10-day period
+        current_date = start_date
+        while current_date < end_date:
+            next_date = current_date + timedelta(days=2)
+            url = f'https://m.imdb.com/search/title/?release_date={current_date.strftime("%Y-%m-%d")},{next_date.strftime("%Y-%m-%d")}&primary_language=ml'
+            yield scrapy.Request(url=url, callback=self.parse)
+            current_date = next_date
 
     def parse(self, response):
         # Iterate over each movie block
@@ -17,40 +30,30 @@ class ImdbMalayalamSpider(scrapy.Spider):
 
             # Extract title
             title = movie.css('h3::text').get()
-            if title:
-                item['title'] = title.strip()
-            else:
-                item['title'] = None
+            item['title'] = title.strip() if title else None
+            if not title:
                 self.log("Title not found")
 
             # Extract the year and duration from the metadata
             spans = metadata.css('span::text').getall()
-            if spans:
-                item['year'] = spans[0].strip() if len(spans) > 0 else None
-                item['duration'] = spans[1].strip() if len(spans) > 1 else None
-            else:
-                item['year'] = None
-                item['duration'] = None
+            item['year'] = spans[0].strip() if len(spans) > 0 else None
+            item['duration'] = spans[1].strip() if len(spans) > 1 else None
+            
+            if not item['year'] or not item['duration']:
                 self.log("Year or duration not found")
 
             # Extract rating
             rating = ratingGroup.css('.ipc-rating-star--rating::text').get()
-            if rating:
-                item['rating'] = rating.strip()
-            else:
-                item['rating'] = None
+            item['rating'] = rating.strip() if rating else None
+            if not rating:
                 self.log("Rating not found")
 
-            # Extract vote count and clean the unwanted HTML
-           # Extract vote count (including comments within the span tag)
+            # Extract vote count
             votes = ratingGroup.xpath('.//span[@class="ipc-rating-star--voteCount"]/text()').getall()
-
-            if votes:
-            # Clean up unwanted whitespaces and extract meaningful text
-                item['votes'] = ''.join([vote.strip() for vote in votes if vote.strip()])
-            else:
-                item['votes'] = None
-            self.log("Votes not found")
+            item['votes'] = ''.join([vote.strip() for vote in votes if vote.strip()]) if votes else None
+            
+            if not item['votes']:
+                self.log("Votes not found")
 
             # Yield the item
             yield item

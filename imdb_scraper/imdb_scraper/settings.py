@@ -29,7 +29,7 @@ MYSQL_USER = os.getenv('MYSQL_USER')
 MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
 
 # Bypass robot.txt rules
-ROBOTSTXT_OBEY = False
+ROBOTSTXT_OBEY = True
 
 # Set additional headers to avoid detection
 DEFAULT_REQUEST_HEADERS = {

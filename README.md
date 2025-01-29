@@ -1,41 +1,116 @@
-# IMDb Scraper
+# Malayalam Movie Data Scraper and Analyzer
 
-This Scrapy project scrapes IMDb's top movies and stores the data in a MySQL database.
+## Overview
+This project utilizes Scrapy to scrape Malayalam movies from IMDb, stores the extracted data in a MySQL database, and enables data analysis using Power BI. The goal is to provide insights into Malayalam movie trends, ratings, and other relevant metrics.
 
-## Setup
+## Features
+- **Data Scraping**: Scrapes Malayalam movie data from IMDb
+- **Data Storage**: Stores the scraped data in a MySQL database for easy access and analysis.
+- **Data Analysis**: Enables visualization and analysis of movie data using Power BI.
 
-1. Create a virtual environment and activate it:
-    ```sh
-    python -m venv scrapy_env
-    source scrapy_env/bin/activate
-    ```
+## Technologies Used
+- **Programming Languages**: Python
+- **Frameworks**: Scrapy
+- **Database**: MySQL
+- **Data Visualization**: Power BI
+- **Environment Management**: Virtual Environments, dotenv
 
-2. Install the required packages:
-    ```sh
-    pip install scrapy mysql-connector-python python-dotenv
-    ```
+## Setup Instructions
 
-3. Set up your MySQL database using the `create_database.sql` script.
+### 1. Create a Virtual Environment
+Create and activate a virtual environment to manage dependencies:
 
-4. Create a `.env` file in the root directory with your MySQL credentials:
-    ```ini
-    MYSQL_HOST=your_mysql_host
-    MYSQL_USER=your_mysql_user
-    MYSQL_PASSWORD=your_mysql_password
-    MYSQL_DATABASE=your_mysql_database
-    ```
+For Windows:
+```
+python -m venv scrapy_env
+source scrapy_env/bin/activate
+```
+For macOS/Linux:
+```
+python -m venv scrapy_env
+source scrapy_env/bin/activate
+```
+### 2. Install Required Packages
+Install the necessary Python packages:
 
-5. Run the spider:
-    ```sh
-    scrapy crawl imdb_spider
-    ```
+```
+pip install scrapy mysql-connector-python python-dotenv
+```
+### 3. Set Up MySQL Database
+Use the create_database.sql script to set up your MySQL database. 
+This script will create the necessary table for storing Malayalam movie data.
 
-## Files
+### 4. Configure Environment Variables
+Create a .env file in the root directory to store your MySQL credentials:
 
-- `items.py`: Defines the data structure.
-- `pipelines.py`: Handles data storage in MySQL.
-- `settings.py`: Configures Scrapy settings.
-- `.env`: Stores environment variables.
-- `.gitignore`: Specifies files to ignore in version control.
-- `create_database.sql`: SQL script to set up the database.
-- `README.md`: Project documentation.
+```
+MYSQL_HOST=your_mysql_host
+MYSQL_USER=your_mysql_user
+MYSQL_PASSWORD=your_mysql_password
+MYSQL_DATABASE=your_mysql_database
+```
+### 5. Run the Scraper
+Execute the spider to start scraping data from IMDb:
+```
+cd .\imdb_scraper\imdb_scraper\
+scrapy crawl imdb_spider
+```
+### 6. Data Analysis
+The analysis of the scraped data is done in Power BI Desktop. Below is a sample dashboard:
+<img src="DashBoard.jpg" alt="Dashboard" width="300">
+
+📊 Power BI Report: You can find the full Power BI report in Data_Analysis.pbix for further exploration.
+
+### 7. DAX Queries Used in Power BI
+The following Power Query M script is used for transforming movie data in Power BI:
+```
+let
+    Source = MySQL.Database("127.0.0.1:3306", "imdb", [ReturnSingleDatabase=true]),
+    imdb_movies = Source{[Schema="imdb", Item="movies"]}[Data],
+    updated_name = Table.TransformColumns(imdb_movies, {
+        {"title", each Text.TrimStart(Text.AfterDelimiter(_, " "), ".")}
+    }),
+    cleaned_votes = Table.TransformColumns(updated_name, {
+        {"votes", each Text.Replace(Text.Replace(_, "(", ""), ")", "")}
+    }),
+    numeric_votes = Table.TransformColumns(cleaned_votes, {
+        {"votes", each 
+            try if Text.EndsWith(_, "K") 
+                then Number.From(Text.Remove(_, "K")) * 1000 
+                else Number.From(_) 
+            otherwise null,
+        type number}
+    }),
+    duration_in_minutes = Table.TransformColumns(numeric_votes, {
+        {"duration", each 
+            let
+                hours = try Number.From(Text.BeforeDelimiter(_, "h")) otherwise 0,
+                minutesText = Text.AfterDelimiter(_, "h"),
+                minutes = if Text.Contains(minutesText, "m") 
+                          then try Number.From(Text.BeforeDelimiter(minutesText, "m")) otherwise 0 
+                          else 0
+            in
+                hours * 60 + minutes,
+        type number}
+    }),
+    RemoveDuplicates_Title = Table.Distinct(duration_in_minutes, {"title"}),
+    Remove_null_duration = Table.SelectRows(RemoveDuplicates_Title, each [duration] <> null and [duration] <> ""),
+    Remove_zero_duration = Table.SelectRows(Remove_null_duration, each [duration] <> 0),
+    Remove_null_votes = Table.SelectRows(Remove_zero_duration, each [votes] <> null and [votes] <> ""),
+    Converted_Data_Types = Table.TransformColumnTypes(Remove_null_votes, {
+        {"rating", type number}, 
+        {"duration", Int64.Type}, 
+        {"votes", Int64.Type}
+    }),
+    FinalTable = Table.RenameColumns(Converted_Data_Types, {
+        {"title", "Title"}
+    })
+in
+    FinalTable
+```
+## Contribution
+Feel free to contribute to this project by submitting issues or pull requests.
+
+## License
+
+This project is licensed under the MIT License.
