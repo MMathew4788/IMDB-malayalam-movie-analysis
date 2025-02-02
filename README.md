@@ -100,6 +100,7 @@ Parameter[Parameter Value] * DIVIDE(SUM('imdb movies'[votes]), CALCULATE(MAX('im
   This formula normalizes both the vote count and the IMDb rating before applying a weight, ensuring that neither factor dominates the final ranking:
 
   Below is a sample dashboard:
+  <br>
   <img src="DashBoard.jpg" alt="Dashboard" width="300">
 
 📊 Power BI Report: You can find the full Power BI report in Data_Analysis.pbix for further exploration.
