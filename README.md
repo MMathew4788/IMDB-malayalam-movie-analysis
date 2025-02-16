@@ -29,7 +29,7 @@ For Windows:
 
 ```
 python -m venv scrapy_env
-source scrapy_env/bin/activate
+source scrapy_env/Scripts/activate
 ```
 
 For macOS/Linux:
@@ -154,6 +154,15 @@ let
 in
     FinalTable
 ```
+
+## ⚙️ ETL Pipeline Workflow
+
+graph TD;
+A[Scrapy - IMDb Scraper] -->|Extract| B[MySQL - Raw Data Storage];
+B -->|Load| C[Power BI - Import Data];
+C -->|Transform| D[Power Query - Data Cleaning & Transformation];
+D -->|Analyze| E[Power BI - DAX Calculations];
+E -->|Visualize| F[Power BI - Dashboard & Reports];
 
 ## Contribution
 
