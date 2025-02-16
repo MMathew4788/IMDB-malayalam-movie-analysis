@@ -157,12 +157,14 @@ in
 
 ## ⚙️ ETL Pipeline Workflow
 
+```mermaid
 graph TD;
-A[Scrapy - IMDb Scraper] -->|Extract| B[MySQL - Raw Data Storage];
-B -->|Load| C[Power BI - Import Data];
-C -->|Transform| D[Power Query - Data Cleaning & Transformation];
-D -->|Analyze| E[Power BI - DAX Calculations];
-E -->|Visualize| F[Power BI - Dashboard & Reports];
+    A[Scrapy - IMDb Scraper] -->|Extract| B[MySQL - Raw Data Storage];
+    B -->|Load| C[Power BI - Import Data];
+    C -->|Transform| D[Power Query - Data Cleaning & Transformation];
+    D -->|Analyze| E[Power BI - DAX Calculations];
+    E -->|Visualize| F[Power BI - Dashboard & Reports];
+```
 
 ## Contribution
 
@@ -171,3 +173,7 @@ Feel free to contribute to this project by submitting issues or pull requests.
 ## License
 
 This project is licensed under the MIT License.
+
+```
+
+```
