@@ -105,56 +105,6 @@ Parameter[Parameter Value] * DIVIDE(SUM('imdb movies'[votes]), CALCULATE(MAX('im
 
 📊 Power BI Report: You can find the full Power BI report in Data_Analysis.pbix for further exploration.
 
-### 7. DAX Queries Used in Power BI
-
-The following Power Query M script is used for transforming movie data in Power BI:
-
-```
-let
-    Source = MySQL.Database("127.0.0.1:3306", "imdb", [ReturnSingleDatabase=true]),
-    imdb_movies = Source{[Schema="imdb", Item="movies"]}[Data],
-    updated_name = Table.TransformColumns(imdb_movies, {
-        {"title", each Text.TrimStart(Text.AfterDelimiter(_, " "), ".")}
-    }),
-    cleaned_votes = Table.TransformColumns(updated_name, {
-        {"votes", each Text.Replace(Text.Replace(_, "(", ""), ")", "")}
-    }),
-    numeric_votes = Table.TransformColumns(cleaned_votes, {
-        {"votes", each
-            try if Text.EndsWith(_, "K")
-                then Number.From(Text.Remove(_, "K")) * 1000
-                else Number.From(_)
-            otherwise null,
-        type number}
-    }),
-    duration_in_minutes = Table.TransformColumns(numeric_votes, {
-        {"duration", each
-            let
-                hours = try Number.From(Text.BeforeDelimiter(_, "h")) otherwise 0,
-                minutesText = Text.AfterDelimiter(_, "h"),
-                minutes = if Text.Contains(minutesText, "m")
-                          then try Number.From(Text.BeforeDelimiter(minutesText, "m")) otherwise 0
-                          else 0
-            in
-                hours * 60 + minutes,
-        type number}
-    }),
-    RemoveDuplicates_Title = Table.Distinct(duration_in_minutes, {"title"}),
-    Remove_null_duration = Table.SelectRows(RemoveDuplicates_Title, each [duration] <> null and [duration] <> ""),
-    Remove_zero_duration = Table.SelectRows(Remove_null_duration, each [duration] <> 0),
-    Remove_null_votes = Table.SelectRows(Remove_zero_duration, each [votes] <> null and [votes] <> ""),
-    Converted_Data_Types = Table.TransformColumnTypes(Remove_null_votes, {
-        {"rating", type number},
-        {"duration", Int64.Type},
-        {"votes", Int64.Type}
-    }),
-    FinalTable = Table.RenameColumns(Converted_Data_Types, {
-        {"title", "Title"}
-    })
-in
-    FinalTable
-```
-
 ## ⚙️ ETL Pipeline Workflow
 
 ```mermaid
